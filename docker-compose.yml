@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: testdb
+    command: --lower-case-table-names=1
+    volumes:
+      - /workspace/docker-images/mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+    driver: local
+    driver_opts:
+      o: bind
+      device: /workspace/docker-images/mysql_data
+      type: none
