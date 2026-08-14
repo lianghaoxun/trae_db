@@ -1,7 +1,7 @@
 #!/bin/bash
 # MySQL 卸载脚本
 # 作用：停止 mysqld，卸载 mysql-server/mysql-client，删除默认 datadir（/var/lib/mysql）
-# 注意：默认保留 /workspace/docker-images/mysql_data（持久化数据），脚本会询问是否一并删除。
+# 注意：会一并删除 /workspace/docker-images/mysql_data（持久化数据）。
 
 set -e
 
@@ -53,24 +53,12 @@ rm -rf /var/log/mysql*
 rm -rf /run/mysqld
 rm -f /tmp/mysqld.log
 
-# 5. 询问是否删除 /workspace/docker-images/mysql_data（持久化数据）
+# 5. 直接删除 /workspace/docker-images/mysql_data（持久化数据）
 PERSIST_DIR="/workspace/docker-images/mysql_data"
 if [ -d "$PERSIST_DIR" ]; then
-  echo
-  warn "检测到持久化数据目录: $PERSIST_DIR"
-  warn "该目录可能包含你的数据库内容 / SSL 私钥。"
-  echo
-  read -r -p "是否一并删除? [y/N] " ans
-  case "$ans" in
-    [yY]|[yY][eE][sS])
-      log "删除 $PERSIST_DIR ..."
-      rm -rf "$PERSIST_DIR"
-      log "已删除"
-      ;;
-    *)
-      warn "保留 $PERSIST_DIR（如需后续使用，请重新跑 mysql-install.sh + 配置 datadir）"
-      ;;
-  esac
+  warn "删除持久化数据目录: $PERSIST_DIR"
+  rm -rf "$PERSIST_DIR"
+  warn "已删除"
 fi
 
 # 6. 验证
