@@ -1,7 +1,7 @@
 #!/bin/bash
 # MySQL 卸载脚本
 # 作用：停止 mysqld，卸载 mysql-server/mysql-client，删除默认 datadir（/var/lib/mysql）
-# 注意：不会删除 /workspace/docker-images/mysql_data（持久化数据），如有需要请手动删除。
+# 注意：默认保留 /workspace/docker-images/mysql_data（持久化数据），脚本会询问是否一并删除。
 
 set -e
 
