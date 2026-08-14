@@ -1,41 +1,46 @@
 #!/bin/bash
 # MySQL 启动脚本
-# - datadir: /workspace/docker-images/mysql_data
-# - 监听: 127.0.0.1:3306 + 127.0.0.1:33060
+# 优先级：
+#   1) /workspace/docker-images/mysql_data （持久化数据，配置了 datadir）
+#   2) /var/lib/mysql                   （apt 默认 datadir）
+# 监听：127.0.0.1:3306 + 127.0.0.1:33060
 
 set -e
 
-DATA_DIR="/workspace/docker-images/mysql_data"
 SOCK_DIR="/run/mysqld"
 LOG_FILE="/tmp/mysqld.log"
-PID_PATTERN="mysqld --user=mysql"
 
-# 颜色
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log() { echo -e "${GREEN}[mysql-start]${NC} $*"; }
+log()  { echo -e "${GREEN}[mysql-start]${NC} $*"; }
 warn() { echo -e "${YELLOW}[mysql-start]${NC} $*"; }
-err() { echo -e "${RED}[mysql-start]${NC} $*" >&2; }
+err()  { echo -e "${RED}[mysql-start]${NC} $*" >&2; }
 
-# 1. 检查 datadir
-if [ ! -d "$DATA_DIR" ]; then
-  err "datadir 不存在: $DATA_DIR"
-  err "请先执行迁移或初始化（参考 /workspace/清理要求.md）"
+# 1. 决定 datadir
+PERSIST_DIR="/workspace/docker-images/mysql_data"
+DEFAULT_DIR="/var/lib/mysql"
+
+if [ -d "$PERSIST_DIR/mysql" ]; then
+  DATA_DIR="$PERSIST_DIR"
+  log "使用持久化 datadir: $DATA_DIR"
+elif [ -d "$DEFAULT_DIR/mysql" ]; then
+  DATA_DIR="$DEFAULT_DIR"
+  log "使用默认 datadir: $DATA_DIR"
+else
+  err "datadir 不存在且未初始化："
+  err "  - 持久化: $PERSIST_DIR/mysql"
+  err "  - 默认:   $DEFAULT_DIR/mysql"
+  err "请先执行 /workspace/scripts/mysql-install.sh，或初始化数据目录"
   exit 1
 fi
 
-if [ ! -d "$DATA_DIR/mysql" ]; then
-  err "datadir 未初始化: $DATA_DIR/mysql 不存在"
-  exit 1
-fi
-
-# 2. 检查是否已运行
-if pgrep -f "$PID_PATTERN" > /dev/null 2>&1; then
+# 2. 是否已运行
+if pgrep -x mysqld > /dev/null 2>&1; then
   warn "mysqld 已在运行，跳过启动"
-  pgrep -af "$PID_PATTERN" | grep -v "zsh\|bash\|grep"
+  pgrep -ax mysqld
   exit 0
 fi
 
@@ -43,12 +48,12 @@ fi
 mkdir -p "$SOCK_DIR"
 chown -R mysql:mysql "$SOCK_DIR"
 
-# 4. 启动 mysqld（daemonize 模式，setsid 脱离会话）
+# 4. 启动 mysqld
 log "启动 mysqld ..."
-setsid nohup mysqld --user=mysql --daemonize >> "$LOG_FILE" 2>&1
+setsid nohup mysqld --user=mysql --datadir="$DATA_DIR" --daemonize >> "$LOG_FILE" 2>&1
 
-# 5. 等待端口就绪
-TIMEOUT=15
+# 5. 等待端口
+TIMEOUT=20
 while [ $TIMEOUT -gt 0 ]; do
   if ss -tln 2>/dev/null | grep -q ":3306 "; then
     break
@@ -59,13 +64,13 @@ done
 
 if [ $TIMEOUT -eq 0 ]; then
   err "mysqld 启动超时，查看日志: $LOG_FILE"
-  tail -20 "$LOG_FILE" 2>/dev/null
+  tail -30 "$LOG_FILE" 2>/dev/null
   exit 1
 fi
 
 # 6. 输出状态
 log "mysqld 启动成功"
-pgrep -af "$PID_PATTERN" | grep -v "zsh\|bash\|grep"
+pgrep -ax mysqld
 echo
 log "监听端口:"
 ss -tlnp 2>/dev/null | grep -E "3306|33060" | awk '{print "  " $0}'
