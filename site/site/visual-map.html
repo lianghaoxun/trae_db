@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大明人物关系图 · 可视化版（初中生）</title>
+<style>
+:root{--red:#C0392B;--gold:#D9A441;--ink:#2F3640;--paper:#FFF8EE;--line:#E5DACB;--green:#3E8E5A}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+background:var(--paper);color:var(--ink);line-height:1.75;font-size:16px;padding-bottom:50px}
+.wrap{max-width:960px;margin:0 auto;padding:0 14px}
+header{background:linear-gradient(160deg,#6E1F16 0%,#C0392B 55%,#8E2B21 100%);
+color:#FFF6E5;padding:32px 18px 26px;text-align:center;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:0;
+background:radial-gradient(circle at 50% 120%,rgba(255,220,150,.28),transparent 60%)}
+.hd-in{position:relative;z-index:2}
+header .tag{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,235,190,.5);
+padding:3px 12px;border-radius:20px;font-size:13px;margin-bottom:10px}
+header h1{font-size:25px;font-weight:800;letter-spacing:1px}
+header h1 em{font-style:normal;color:var(--gold)}
+header .sub{margin-top:9px;font-size:14.5px;opacity:.93}
+header .q{margin:16px auto 0;max-width:600px;background:rgba(0,0,0,.16);border-left:4px solid var(--gold);
+padding:11px 14px;border-radius:0 8px 8px 0;font-size:14.5px;text-align:left}
+section{margin-top:28px}
+.h2{font-size:20px;font-weight:800;display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.h2 .n{background:var(--red);color:#fff;width:29px;height:29px;border-radius:9px;font-size:15px;
+display:inline-flex;align-items:center;justify-content:center;flex:none}
+.h2sub{font-size:13px;color:#8A7A66;margin:0 0 12px 38px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;
+box-shadow:0 3px 12px rgba(120,90,60,.07)}
+.tip{background:#FFF3D6;border:1px dashed #D9A441;border-radius:10px;padding:11px 13px;font-size:14px;margin-top:11px}
+.tip b{color:#9A5B12}
+
+/* 图例 */
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.lg{display:flex;align-items:center;gap:6px;font-size:12.5px;background:#fff;border:1.5px solid var(--line);
+border-radius:16px;padding:4px 11px;cursor:pointer;user-select:none}
+.lg i{width:20px;height:0;border-top-width:3px;border-top-style:solid;display:inline-block}
+.lg.dash i{border-top-style:dashed}
+.lg.off{opacity:.35;text-decoration:line-through}
+
+/* 集团图例 */
+.glegend{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.gl{display:flex;align-items:center;gap:6px;font-size:12px;background:#fff;border:1px solid var(--line);
+border-radius:14px;padding:3px 10px}
+.gl i{width:13px;height:13px;border-radius:4px;display:inline-block}
+
+/* 工具条 */
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.zb{border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:5px 13px;font-size:13px;
+cursor:pointer;font-family:inherit}
+.zb.on{background:var(--red);color:#fff;border-color:var(--red)}
+.tlab{font-size:12px;color:#A09381}
+
+/* 时期 tab */
+.tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.tab{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:7px 14px;
+font-size:13.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.tab.on{background:var(--red);color:#fff;border-color:var(--red);font-weight:700}
+.tab .ty{font-size:11px;opacity:.8;margin-left:4px}
+
+/* 舞台 */
+.stage{background:#FFFDF6;border:1px solid var(--line);border-radius:14px;overflow:auto;
+cursor:grab;position:relative;-webkit-overflow-scrolling:touch;max-height:70vh}
+.stage.drag{cursor:grabbing}
+.gmap{display:block;width:100%;height:auto;min-width:900px}
+.gmap.hide{display:none}
+
+/* 高亮 */
+.gmap.focusing .node{opacity:.16}
+.gmap.focusing .node.on,.gmap.focusing .node.rel{opacity:1}
+.gmap.focusing .edge{opacity:.08}
+.gmap.focusing .edge.on{opacity:1;stroke-width:3.6}
+.node.on rect{stroke:#C0392B;stroke-width:3.5}
+.node.rel rect{stroke-width:2.8}
+.elab{display:none}
+.gmap.showall .elab{display:block}
+.gmap.focusing .elab{display:none}
+.gmap.focusing .elab.on{display:block}
+.edge.off,.elab.off{display:none}
+
+/* 详情面板 */
+.panel{margin-top:12px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--gold);
+border-radius:12px;padding:14px;min-height:110px}
+.panel h4{font-size:17px;color:var(--red);margin-bottom:2px}
+.panel .role{font-size:12.5px;color:#8A7A66;margin-bottom:8px}
+.panel .desc{font-size:14.5px;margin-bottom:9px}
+.rlist{display:grid;gap:6px}
+.ritem{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;background:#FBF7F0;
+border-radius:9px;padding:7px 10px;cursor:pointer}
+.ritem:hover{background:#F5EDE0}
+.ritem .tag2{flex:none;font-size:11px;font-weight:700;border-radius:8px;padding:2px 7px;color:#fff}
+.ritem .who{font-weight:700;color:#2F3640}
+.ritem .wht{color:#6B5F50}
+
+/* 横向时间轴 */
+.tlwrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 0 10px}
+.tl{display:flex;gap:8px;overflow-x:auto;padding:2px 12px 8px;-webkit-overflow-scrolling:touch}
+.ti{flex:none;width:104px;background:#FDF9F2;border:1.5px solid var(--line);border-radius:11px;
+padding:8px 6px;text-align:center;cursor:pointer}
+.ti:hover{border-color:var(--gold)}
+.ti.on{background:#FBEEEA;border-color:var(--red)}
+.ti .e1{font-size:15px;font-weight:800;color:var(--red)}
+.ti .e2{font-size:11.5px;color:#5A4A3E;margin-top:2px}
+.ti .e3{font-size:10.5px;color:#A09381;margin-top:2px}
+.tlhint{font-size:12px;color:#A09381;text-align:center;padding:0 12px}
+
+footer{text-align:center;font-size:12.5px;color:#A09381;margin-top:22px}
+@media(max-width:560px){header h1{font-size:21px}.gmap{min-width:820px}.stage{max-height:62vh}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-in">
+    <div class="tag">明朝 · 可视化关系图 · 初中生版</div>
+    <h1>大明人物关系图 · <em>点谁看谁</em></h1>
+    <div class="sub">6张关系图 · 63位人物 · 78条关系线 · 从1368到1644</div>
+    <div class="q">这一版不是长条列表，是真正的<b>关系网络图</b>：每个人是一个方块，每条线是一段关系，线的颜色和虚实说明是父子、夫妻、重用、杀、还是敌对。<b>点一个人，他所有关系立刻亮起来。</b></div>
+  </div>
+</header>
+<div class="wrap">
+<section>
+<div class="h2"><span class="n">1</span>先看懂：这张图怎么读</div>
+<div class="h2sub">三种操作，一分钟上手</div>
+<div class="card"><p><b>① 点一个人</b> → 他变亮、他的关系线变粗并浮出文字，<b>不相关的人自动变淡</b>。下方面板列出他所有的关系。</p><p><b>② 点下面的关系条目</b> → 单独高亮那一条关系，看清两个人之间到底发生了什么。</p><p><b>③ 放大、拖动</b> → 右上角切换放大倍数，鼠标按住图上任意处可以拖着走（手机上直接滑动即可）。</p></div>
+<div class="tip"><b>给同学的建议：</b>先点<b>朱元璋</b>，看他一个人连出去多少条线；再点<b>马皇后</b>，看她那两条绿色线救了谁。最后点<b>朱棣</b>，顺着线看看他岳父是谁、他后来打了谁。</div>
+</section>
+<section>
+<div class="h2"><span class="n">2</span>人物关系图：点谁看谁</div>
+<div class="h2sub">共 6 张图，覆盖 1368—1644；线的颜色和虚实表示关系类型</div>
+<div class="glegend">
+<span class="gl"><i style="background:#FFF6E6;border:1.5px solid #E0C9A6"></i>皇帝·宗室</span>
+<span class="gl"><i style="background:#FDF0E3;border:1.5px solid #E8C9A0"></i>后族·外戚</span>
+<span class="gl"><i style="background:#FDEFE0;border:1.5px solid #E8A87C"></i>淮西勋贵</span>
+<span class="gl"><i style="background:#EAF1FA;border:1.5px solid #8FAFD4"></i>浙东文臣</span>
+<span class="gl"><i style="background:#F2ECF8;border:1.5px solid #AE93CE"></i>宦官集团</span>
+<span class="gl"><i style="background:#FBEEEA;border:1.5px solid #E0A79D"></i>文官·名臣</span>
+<span class="gl"><i style="background:#EAF3EA;border:1.5px solid #8FBF8F"></i>武将·边防</span>
+<span class="gl"><i style="background:#F5EDE6;border:1.5px solid #BFA08A"></i>外敌·起义军</span>
+</div>
+<div class="legend" id="legend">
+<span class="lg " data-t="kin"><i style="border-top-color:#D9A441;border-top-style:solid"></i>血缘（父子·祖孙）</span>
+<span class="lg " data-t="marry"><i style="border-top-color:#C0392B;border-top-style:solid"></i>婚姻（夫妻·翁婿）</span>
+<span class="lg " data-t="trust"><i style="border-top-color:#8A6A4A;border-top-style:solid"></i>君臣·重用</span>
+<span class="lg dash" data-t="kill"><i style="border-top-color:#C0392B;border-top-style:dashed"></i>清洗（杀·贬·清算）</span>
+<span class="lg dash" data-t="fight"><i style="border-top-color:#8E44AD;border-top-style:dashed"></i>敌对（党争·交战）</span>
+<span class="lg " data-t="ally"><i style="border-top-color:#2E5A88;border-top-style:solid"></i>同盟·姻亲·举荐</span>
+<span class="lg " data-t="help"><i style="border-top-color:#3E8E5A;border-top-style:solid"></i>救助·师友</span>
+</div>
+<div class="tabs" id="tabs">
+<button class="tab on" data-k="hw">洪武 · 开国与清洗<span class="ty">1368—1398</span></button>
+<button class="tab" data-k="jy">建文 · 永乐 · 叔侄夺位<span class="ty">1399—1424</span></button>
+<button class="tab" data-k="zt">仁宣 · 土木堡 · 夺门<span class="ty">1425—1464</span></button>
+<button class="tab" data-k="cz">成化 · 弘治 · 正德<span class="ty">1465—1521</span></button>
+<button class="tab" data-k="jw">嘉靖 · 隆庆 · 万历<span class="ty">1522—1620</span></button>
+<button class="tab" data-k="cm">泰昌 · 天启 · 崇祯 · 明亡<span class="ty">1620—1644</span></button>
+</div>
+<div class="tools">
+<button class="zb on" data-z="100">原大小</button>
+<button class="zb" data-z="150">150%</button>
+<button class="zb" data-z="220">220%</button>
+<button class="zb" id="btnLab">显示全部文字</button>
+<button class="zb" id="btnReset">重置视图</button>
+<span class="tlab">放大后可拖动查看</span>
+</div>
+<div class="stage" id="stage">
+<svg class="gmap" viewBox="0 0 1240 820" data-k="hw">
+<g class="edges">
+<path class="edge" data-a="朱元璋" data-b="马皇后" data-t="marry" d="M620 60 Q601 117 620 175" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="朱标" data-t="kin" d="M620 60 Q470 147 400 305" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="朱棣" data-t="kin" d="M620 60 Q690 217 840 305" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱标" data-b="朱允炆" data-t="kin" d="M400 305 Q380 365 400 425" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="其他塞王" data-t="kin" d="M620 60 Q791 286 1040 425" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="李善长" data-t="kill" d="M620 60 Q341 122 110 290" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="胡惟庸" data-t="kill" d="M620 60 Q330 198 110 430" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="蓝玉" data-t="kill" d="M620 60 Q426 253 330 510" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="徐达" data-t="trust" d="M620 60 Q451 86 330 205" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="常遇春" data-t="trust" d="M620 60 Q422 356 330 700" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="汤和" data-t="trust" d="M620 60 Q324 268 110 560" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="李文忠" data-t="trust" d="M620 60 Q532 359 560 670" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="刘基" data-t="trust" d="M620 60 Q806 207 1040 250" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱元璋" data-b="宋濂" data-t="trust" d="M620 60 Q681 350 850 595" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="李善长" data-b="胡惟庸" data-t="ally" d="M110 290 Q87 360 110 430" fill="none" stroke="#2E5A88" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="李善长" data-b="刘基" data-t="fight" d="M110 290 Q577 327 1040 250" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="徐达" data-b="朱棣" data-t="marry" d="M330 205 Q573 311 840 305" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="常遇春" data-b="蓝玉" data-t="ally" d="M330 700 Q360 605 330 510" fill="none" stroke="#2E5A88" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="马皇后" data-b="宋濂" data-t="help" d="M620 175 Q684 412 850 595" fill="none" stroke="#3E8E5A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="马皇后" data-b="李文忠" data-t="help" d="M620 175 Q532 415 560 670" fill="none" stroke="#3E8E5A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱标" data-b="宋濂" data-t="help" d="M400 305 Q593 498 850 595" fill="none" stroke="#3E8E5A" stroke-width="2.4" stroke-linecap="round"/>
+</g>
+<g class="elabs">
+<g class="elab" data-a="朱元璋" data-b="马皇后" data-t="marry"><rect x="567.0" y="108.0" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="610.8" y="122.0" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">夫妻 · 结发</text></g>
+<g class="elab" data-a="朱元璋" data-b="朱标" data-t="kin"><rect x="446.6" y="155.4" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="490.4" y="169.4" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子 · 太子</text></g>
+<g class="elab" data-a="朱元璋" data-b="朱棣" data-t="kin"><rect x="666.6" y="190.6" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="710.4" y="204.6" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子 · 四子</text></g>
+<g class="elab" data-a="朱标" data-b="朱允炆" data-t="kin"><rect x="372.9" y="355.5" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="390.4" y="369.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱元璋" data-b="其他塞王" data-t="kin"><rect x="756.7" y="254.9" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="811.0" y="268.9" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子 · 分封守边</text></g>
+<g class="elab" data-a="朱元璋" data-b="李善长" data-t="kill"><rect x="272.6" y="139.1" width="161.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="353.1" y="153.1" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">1390年处死 · 株连全家</text></g>
+<g class="elab" data-a="朱元璋" data-b="胡惟庸" data-t="kill"><rect x="272.7" y="212.0" width="150.5" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="348.0" y="226.0" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">1380年处死 · 废丞相</text></g>
+<g class="elab" data-a="朱元璋" data-b="蓝玉" data-t="kill"><rect x="359.6" y="259.8" width="182.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="450.6" y="273.8" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">1393年处死 · 株连1.5万</text></g>
+<g class="elab" data-a="朱元璋" data-b="徐达" data-t="trust"><rect x="409.1" y="99.8" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="463.4" y="113.8" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">重用 · 北伐主帅</text></g>
+<g class="elab" data-a="朱元璋" data-b="常遇春" data-t="trust"><rect x="404.8" y="358.5" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="448.6" y="372.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">重用 · 早逝</text></g>
+<g class="elab" data-a="朱元璋" data-b="汤和" data-t="trust"><rect x="290.4" y="279.8" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="344.7" y="293.8" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">重用 · 少数善终</text></g>
+<g class="elab" data-a="朱元璋" data-b="李文忠" data-t="trust"><rect x="517.4" y="352.7" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="561.1" y="366.7" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">重用 · 外甥</text></g>
+<g class="elab" data-a="朱元璋" data-b="刘基" data-t="trust"><rect x="753.3" y="171.9" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="818.0" y="185.9" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">用而疑之 · 被迫辞官</text></g>
+<g class="elab" data-a="朱元璋" data-b="宋濂" data-t="trust"><rect x="659.4" y="329.5" width="98.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="708.4" y="343.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">重用 · 后获罪</text></g>
+<g class="elab" data-a="李善长" data-b="胡惟庸" data-t="ally"><rect x="28.8" y="350.5" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#2E5A88" stroke-width="1.2" opacity="0.97"/><text x="98.8" y="364.5" font-size="10.5" fill="#2E5A88" text-anchor="middle" font-weight="600">同乡 · 举荐 · 姻亲</text></g>
+<g class="elab" data-a="李善长" data-b="刘基" data-t="fight"><rect x="511.5" y="289.5" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="576.2" y="303.5" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">两派党争 · 势同水火</text></g>
+<g class="elab" data-a="徐达" data-b="朱棣" data-t="marry"><rect x="509.4" y="274.0" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="579.4" y="288.0" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">翁婿 · 徐达长女嫁朱棣</text></g>
+<g class="elab" data-a="常遇春" data-b="蓝玉" data-t="ally"><rect x="269.9" y="595.5" width="150.5" height="19" rx="9" fill="#FFFDF6" stroke="#2E5A88" stroke-width="1.2" opacity="0.97"/><text x="345.2" y="609.5" font-size="10.5" fill="#2E5A88" text-anchor="middle" font-weight="600">姻亲 · 蓝玉是常遇春妻弟</text></g>
+<g class="elab" data-a="马皇后" data-b="宋濂" data-t="help"><rect x="639.6" y="389.4" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#3E8E5A" stroke-width="1.2" opacity="0.97"/><text x="709.6" y="403.4" font-size="10.5" fill="#3E8E5A" text-anchor="middle" font-weight="600">劝谏救下 · 免死改流放</text></g>
+<g class="elab" data-a="马皇后" data-b="李文忠" data-t="help"><rect x="507.0" y="409.5" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#3E8E5A" stroke-width="1.2" opacity="0.97"/><text x="561.2" y="423.5" font-size="10.5" fill="#3E8E5A" text-anchor="middle" font-weight="600">劝止 · 后立大功</text></g>
+<g class="elab" data-a="朱标" data-b="宋濂" data-t="help"><rect x="560.3" y="464.9" width="98.0" height="19" rx="9" fill="#FFFDF6" stroke="#3E8E5A" stroke-width="1.2" opacity="0.97"/><text x="609.3" y="478.9" font-size="10.5" fill="#3E8E5A" text-anchor="middle" font-weight="600">师生 · 太子师</text></g>
+</g>
+<g class="nodes">
+<g class="node" data-n="朱元璋" data-g="emp"><rect x="554" y="34" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="620" y="58" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱元璋</text><text class="nr" x="620" y="75" font-size="9.5" fill="#8A7A66" text-anchor="middle">明太祖 · 开国皇帝</text></g>
+<g class="node" data-n="马皇后" data-g="cons"><rect x="554" y="149" width="132" height="52" rx="10" fill="#FDF0E3" stroke="#E8C9A0" stroke-width="2"/><text class="nn" x="620" y="173" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">马皇后</text><text class="nr" x="620" y="190" font-size="9.5" fill="#8A7A66" text-anchor="middle">孝慈高皇后</text></g>
+<g class="node" data-n="朱标" data-g="emp"><rect x="334" y="279" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="400" y="303" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱标</text><text class="nr" x="400" y="320" font-size="9.5" fill="#8A7A66" text-anchor="middle">太子 · 早逝</text></g>
+<g class="node" data-n="朱棣" data-g="emp"><rect x="774" y="279" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="840" y="303" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱棣</text><text class="nr" x="840" y="320" font-size="9.5" fill="#8A7A66" text-anchor="middle">燕王 · 后来的永乐帝</text></g>
+<g class="node" data-n="朱允炆" data-g="emp"><rect x="334" y="399" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="400" y="423" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱允炆</text><text class="nr" x="400" y="440" font-size="9.5" fill="#8A7A66" text-anchor="middle">皇太孙 · 建文帝</text></g>
+<g class="node" data-n="其他塞王" data-g="emp"><rect x="974" y="399" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="1040" y="423" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">其他塞王</text><text class="nr" x="1040" y="440" font-size="9.5" fill="#8A7A66" text-anchor="middle">秦·晋·肃·宁等九王</text></g>
+<g class="node" data-n="李善长" data-g="huaixi"><rect x="44" y="264" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="110" y="288" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">李善长</text><text class="nr" x="110" y="305" font-size="9.5" fill="#8A7A66" text-anchor="middle">淮西领袖 · 韩国公</text></g>
+<g class="node" data-n="胡惟庸" data-g="huaixi"><rect x="44" y="404" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="110" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">胡惟庸</text><text class="nr" x="110" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">末代丞相</text></g>
+<g class="node" data-n="汤和" data-g="huaixi"><rect x="44" y="534" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="110" y="558" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">汤和</text><text class="nr" x="110" y="575" font-size="9.5" fill="#8A7A66" text-anchor="middle">东瓯王 · 善终</text></g>
+<g class="node" data-n="徐达" data-g="huaixi"><rect x="264" y="179" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="330" y="203" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">徐达</text><text class="nr" x="330" y="220" font-size="9.5" fill="#8A7A66" text-anchor="middle">中山王 · 开国第一将</text></g>
+<g class="node" data-n="常遇春" data-g="huaixi"><rect x="264" y="674" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="330" y="698" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">常遇春</text><text class="nr" x="330" y="715" font-size="9.5" fill="#8A7A66" text-anchor="middle">开平王 · 常十万</text></g>
+<g class="node" data-n="蓝玉" data-g="huaixi"><rect x="264" y="484" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="330" y="508" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">蓝玉</text><text class="nr" x="330" y="525" font-size="9.5" fill="#8A7A66" text-anchor="middle">凉国公 · 名将</text></g>
+<g class="node" data-n="李文忠" data-g="huaixi"><rect x="494" y="644" width="132" height="52" rx="10" fill="#FDEFE0" stroke="#E8A87C" stroke-width="2"/><text class="nn" x="560" y="668" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">李文忠</text><text class="nr" x="560" y="685" font-size="9.5" fill="#8A7A66" text-anchor="middle">岐阳王 · 朱元璋外甥</text></g>
+<g class="node" data-n="刘基" data-g="zhedong"><rect x="974" y="224" width="132" height="52" rx="10" fill="#EAF1FA" stroke="#8FAFD4" stroke-width="2"/><text class="nn" x="1040" y="248" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">刘基</text><text class="nr" x="1040" y="265" font-size="9.5" fill="#8A7A66" text-anchor="middle">刘伯温 · 诚意伯</text></g>
+<g class="node" data-n="宋濂" data-g="zhedong"><rect x="784" y="569" width="132" height="52" rx="10" fill="#EAF1FA" stroke="#8FAFD4" stroke-width="2"/><text class="nn" x="850" y="593" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">宋濂</text><text class="nr" x="850" y="610" font-size="9.5" fill="#8A7A66" text-anchor="middle">文臣之首 · 太子师</text></g>
+</g>
+</svg>
+<svg class="gmap" viewBox="0 0 1240 760" data-k="jy">
+<g class="edges">
+<path class="edge" data-a="朱允炆" data-b="朱棣" data-t="fight" d="M350 80 Q625 138 900 80" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱允炆" data-b="齐泰" data-t="trust" d="M350 80 Q230 143 170 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱允炆" data-b="黄子澄" data-t="trust" d="M350 80 Q320 172 350 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱允炆" data-b="方孝孺" data-t="trust" d="M350 80 Q208 228 170 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱允炆" data-b="铁铉" data-t="trust" d="M350 80 Q294 255 350 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱允炆" data-b="李景隆" data-t="trust" d="M350 80 Q388 281 530 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱棣" data-b="姚广孝" data-t="trust" d="M900 80 Q870 172 900 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱棣" data-b="郑和" data-t="trust" d="M900 80 Q938 281 1080 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱棣" data-b="解缙" data-t="trust" d="M900 80 Q844 255 900 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱棣" data-b="方孝孺" data-t="kill" d="M900 80 Q509 202 170 430" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱棣" data-b="铁铉" data-t="kill" d="M900 80 Q593 206 350 430" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="李景隆" data-b="朱棣" data-t="ally" d="M530 430 Q754 297 900 80" fill="none" stroke="#2E5A88" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱棣" data-b="朱允炆" data-t="kill" d="M900 80 Q625 22 350 80" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+</g>
+<g class="elabs">
+<g class="elab" data-a="朱允炆" data-b="朱棣" data-t="fight"><rect x="560.2" y="99.5" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="625.0" y="113.5" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">叔侄对决 · 靖难之役</text></g>
+<g class="elab" data-a="朱允炆" data-b="齐泰" data-t="trust"><rect x="175.2" y="148.6" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="245.2" y="162.6" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚为谋士 · 主先削强藩</text></g>
+<g class="elab" data-a="朱允炆" data-b="黄子澄" data-t="trust"><rect x="265.2" y="163.0" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="335.2" y="177.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚为谋士 · 主先削弱藩</text></g>
+<g class="elab" data-a="朱允炆" data-b="方孝孺" data-t="trust"><rect x="190.5" y="232.2" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="234.2" y="246.2" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">帝师 · 深信</text></g>
+<g class="elab" data-a="朱允炆" data-b="铁铉" data-t="trust"><rect x="262.5" y="245.5" width="119.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="322.0" y="259.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">守济南 · 挡住朱棣</text></g>
+<g class="elab" data-a="朱允炆" data-b="李景隆" data-t="trust"><rect x="339.0" y="258.8" width="150.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="414.2" y="272.8" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">任命为主帅 · 50万大军</text></g>
+<g class="elab" data-a="朱棣" data-b="姚广孝" data-t="trust"><rect x="831.0" y="163.0" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="885.2" y="177.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">谋主 · 力劝起兵</text></g>
+<g class="elab" data-a="朱棣" data-b="郑和" data-t="trust"><rect x="931.0" y="258.8" width="66.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="964.2" y="272.8" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">派七下西洋</text></g>
+<g class="elab" data-a="朱棣" data-b="解缙" data-t="trust"><rect x="823.0" y="245.5" width="98.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="872.0" y="259.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">命修《永乐大典》</text></g>
+<g class="elab" data-a="朱棣" data-b="方孝孺" data-t="kill"><rect x="452.5" y="219.4" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="522.5" y="233.4" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">拒写诏书 · 被杀牵连广</text></g>
+<g class="elab" data-a="朱棣" data-b="铁铉" data-t="kill"><rect x="565.7" y="221.0" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="609.4" y="235.0" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">不屈 · 被杀</text></g>
+<g class="elab" data-a="李景隆" data-b="朱棣" data-t="ally"><rect x="685.9" y="266.6" width="98.0" height="19" rx="9" fill="#FFFDF6" stroke="#2E5A88" stroke-width="1.2" opacity="0.97"/><text x="734.9" y="280.6" font-size="10.5" fill="#2E5A88" text-anchor="middle" font-weight="600">打开南京城门迎降</text></g>
+<g class="elab" data-a="朱棣" data-b="朱允炆" data-t="kill"><rect x="555.0" y="41.5" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="625.0" y="55.5" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">城破 · 建文帝下落不明</text></g>
+</g>
+<g class="nodes">
+<g class="node" data-n="朱允炆" data-g="emp"><rect x="284" y="54" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="350" y="78" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱允炆</text><text class="nr" x="350" y="95" font-size="9.5" fill="#8A7A66" text-anchor="middle">建文帝 · 21岁即位</text></g>
+<g class="node" data-n="朱棣" data-g="emp"><rect x="834" y="54" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="900" y="78" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱棣</text><text class="nr" x="900" y="95" font-size="9.5" fill="#8A7A66" text-anchor="middle">燕王 → 明成祖</text></g>
+<g class="node" data-n="齐泰" data-g="civil"><rect x="104" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="170" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">齐泰</text><text class="nr" x="170" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">兵部尚书 · 削藩派</text></g>
+<g class="node" data-n="黄子澄" data-g="civil"><rect x="284" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="350" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">黄子澄</text><text class="nr" x="350" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">翰林学士 · 削藩派</text></g>
+<g class="node" data-n="方孝孺" data-g="civil"><rect x="104" y="404" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="170" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">方孝孺</text><text class="nr" x="170" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">帝师 · 第一忠臣</text></g>
+<g class="node" data-n="铁铉" data-g="general"><rect x="284" y="404" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="350" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">铁铉</text><text class="nr" x="350" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">济南守将</text></g>
+<g class="node" data-n="李景隆" data-g="general"><rect x="464" y="404" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="530" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">李景隆</text><text class="nr" x="530" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">曹国公 · 主帅</text></g>
+<g class="node" data-n="姚广孝" data-g="civil"><rect x="834" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="900" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">姚广孝</text><text class="nr" x="900" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">黑衣宰相 · 谋主</text></g>
+<g class="node" data-n="郑和" data-g="eunuch"><rect x="1014" y="404" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="1080" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">郑和</text><text class="nr" x="1080" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">三宝太监</text></g>
+<g class="node" data-n="解缙" data-g="civil"><rect x="834" y="404" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="900" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">解缙</text><text class="nr" x="900" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">《永乐大典》主编</text></g>
+</g>
+</svg>
+<svg class="gmap" viewBox="0 0 1240 760" data-k="zt">
+<g class="edges">
+<path class="edge" data-a="朱高炽" data-b="朱瞻基" data-t="kin" d="M250 70 Q375 110 500 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱瞻基" data-b="朱祁镇" data-t="kin" d="M500 70 Q625 110 750 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱祁镇" data-b="朱祁钰" data-t="kin" d="M750 70 Q875 110 1000 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱高炽" data-b="三杨" data-t="trust" d="M250 70 Q343 207 500 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱瞻基" data-b="三杨" data-t="trust" d="M500 70 Q468 167 500 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱祁镇" data-b="王振" data-t="trust" d="M750 70 Q718 167 750 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="也先" data-b="朱祁镇" data-t="fight" d="M1080 265 Q944 117 750 70" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱祁钰" data-b="于谦" data-t="trust" d="M1000 70 Q942 250 1000 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="于谦" data-b="也先" data-t="fight" d="M1000 430 Q1066 360 1080 265" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="石亨" data-b="于谦" data-t="fight" d="M700 590 Q875 558 1000 430" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="徐有贞" data-b="于谦" data-t="fight" d="M870 590 Q960 530 1000 430" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="曹吉祥" data-b="于谦" data-t="fight" d="M1040 590 Q1045 503 1000 430" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱祁镇" data-b="于谦" data-t="kill" d="M750 70 Q827 283 1000 430" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="石亨" data-b="朱祁镇" data-t="ally" d="M700 590 Q782 335 750 70" fill="none" stroke="#2E5A88" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱祁钰" data-b="朱祁镇" data-t="fight" d="M1000 70 Q875 30 750 70" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+</g>
+<g class="elabs">
+<g class="elab" data-a="朱高炽" data-b="朱瞻基" data-t="kin"><rect x="357.5" y="80.5" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="375.0" y="94.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱瞻基" data-b="朱祁镇" data-t="kin"><rect x="607.5" y="80.5" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="625.0" y="94.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱祁镇" data-b="朱祁钰" data-t="kin"><rect x="820.8" y="80.5" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="875.0" y="94.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">兄弟 · 同父异母</text></g>
+<g class="elab" data-a="朱高炽" data-b="三杨" data-t="trust"><rect x="331.4" y="178.0" width="56.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="359.4" y="192.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚为宰辅</text></g>
+<g class="elab" data-a="朱瞻基" data-b="三杨" data-t="trust"><rect x="419.6" y="158.0" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="484.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚为宰辅 · 仁宣之治</text></g>
+<g class="elab" data-a="朱祁镇" data-b="王振" data-t="trust"><rect x="680.1" y="158.0" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="734.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">宠信 · 太子伴读</text></g>
+<g class="elab" data-a="也先" data-b="朱祁镇" data-t="fight"><rect x="849.3" y="133.0" width="161.0" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="929.8" y="147.0" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">1449土木堡 · 皇帝被俘</text></g>
+<g class="elab" data-a="朱祁钰" data-b="于谦" data-t="trust"><rect x="901.2" y="240.5" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="971.2" y="254.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚重 · 打赢北京保卫战</text></g>
+<g class="elab" data-a="于谦" data-b="也先" data-t="fight"><rect x="983.2" y="344.4" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="1053.2" y="358.4" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">北京保卫战 · 五日击退</text></g>
+<g class="elab" data-a="石亨" data-b="于谦" data-t="fight"><rect x="808.5" y="524.5" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="862.8" y="538.5" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">反咬 · 诬陷谋逆</text></g>
+<g class="elab" data-a="徐有贞" data-b="于谦" data-t="fight"><rect x="888.3" y="510.9" width="119.0" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="947.8" y="524.9" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">反咬 · 说不杀无名</text></g>
+<g class="elab" data-a="曹吉祥" data-b="于谦" data-t="fight"><rect x="978.5" y="497.3" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="1032.8" y="511.3" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">反咬 · 夺门同谋</text></g>
+<g class="elab" data-a="朱祁镇" data-b="于谦" data-t="kill"><rect x="770.7" y="257.0" width="161.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="851.2" y="271.0" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">1457年处死 · 天下冤之</text></g>
+<g class="elab" data-a="石亨" data-b="朱祁镇" data-t="ally"><rect x="689.1" y="323.3" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#2E5A88" stroke-width="1.2" opacity="0.97"/><text x="753.9" y="337.3" font-size="10.5" fill="#2E5A88" text-anchor="middle" font-weight="600">夺门之变 · 拥其复辟</text></g>
+<g class="elab" data-a="朱祁钰" data-b="朱祁镇" data-t="fight"><rect x="836.5" y="40.5" width="77.0" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="875.0" y="54.5" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">软禁南宫七年</text></g>
+</g>
+<g class="nodes">
+<g class="node" data-n="朱高炽" data-g="emp"><rect x="184" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="250" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱高炽</text><text class="nr" x="250" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明仁宗 · 洪熙</text></g>
+<g class="node" data-n="朱瞻基" data-g="emp"><rect x="434" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="500" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱瞻基</text><text class="nr" x="500" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明宣宗 · 宣德</text></g>
+<g class="node" data-n="朱祁镇" data-g="emp"><rect x="684" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="750" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱祁镇</text><text class="nr" x="750" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明英宗 · 正统/天顺</text></g>
+<g class="node" data-n="朱祁钰" data-g="emp"><rect x="934" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="1000" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱祁钰</text><text class="nr" x="1000" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">景泰帝 · 代宗</text></g>
+<g class="node" data-n="三杨" data-g="civil"><rect x="434" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="500" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">三杨</text><text class="nr" x="500" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">杨士奇·杨荣·杨溥</text></g>
+<g class="node" data-n="王振" data-g="eunuch"><rect x="684" y="239" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="750" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">王振</text><text class="nr" x="750" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">司礼监太监</text></g>
+<g class="node" data-n="也先" data-g="enemy"><rect x="1014" y="239" width="132" height="52" rx="10" fill="#F5EDE6" stroke="#BFA08A" stroke-width="2"/><text class="nn" x="1080" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">也先</text><text class="nr" x="1080" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">瓦剌首领</text></g>
+<g class="node" data-n="于谦" data-g="civil"><rect x="934" y="404" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="1000" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">于谦</text><text class="nr" x="1000" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">兵部尚书 · 于少保</text></g>
+<g class="node" data-n="石亨" data-g="general"><rect x="634" y="564" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="700" y="588" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">石亨</text><text class="nr" x="700" y="605" font-size="9.5" fill="#8A7A66" text-anchor="middle">武将 · 夺门牵头</text></g>
+<g class="node" data-n="徐有贞" data-g="civil"><rect x="804" y="564" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="870" y="588" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">徐有贞</text><text class="nr" x="870" y="605" font-size="9.5" fill="#8A7A66" text-anchor="middle">文臣 · 夺门主谋</text></g>
+<g class="node" data-n="曹吉祥" data-g="eunuch"><rect x="974" y="564" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="1040" y="588" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">曹吉祥</text><text class="nr" x="1040" y="605" font-size="9.5" fill="#8A7A66" text-anchor="middle">太监 · 夺门同谋</text></g>
+</g>
+</svg>
+<svg class="gmap" viewBox="0 0 1240 760" data-k="cz">
+<g class="edges">
+<path class="edge" data-a="朱见深" data-b="朱祐樘" data-t="kin" d="M300 70 Q460 121 620 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱祐樘" data-b="朱厚照" data-t="kin" d="M620 70 Q780 121 940 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱见深" data-b="万贵妃" data-t="marry" d="M300 70 Q358 196 480 265" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱见深" data-b="汪直" data-t="trust" d="M300 70 Q268 167 300 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱祐樘" data-b="弘治三贤" data-t="trust" d="M620 70 Q588 167 620 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱厚照" data-b="刘瑾" data-t="trust" d="M940 70 Q908 167 940 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="刘瑾" data-b="王守仁" data-t="fight" d="M940 265 Q993 373 1100 430" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱厚照" data-b="王守仁" data-t="trust" d="M940 70 Q966 273 1100 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+</g>
+<g class="elabs">
+<g class="elab" data-a="朱见深" data-b="朱祐樘" data-t="kin"><rect x="442.5" y="86.1" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="460.0" y="100.1" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱祐樘" data-b="朱厚照" data-t="kin"><rect x="762.5" y="86.1" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="780.0" y="100.1" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱见深" data-b="万贵妃" data-t="marry"><rect x="314.9" y="172.4" width="119.0" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="374.4" y="186.4" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">专宠 · 相差十九岁</text></g>
+<g class="elab" data-a="朱见深" data-b="汪直" data-t="trust"><rect x="235.4" y="158.0" width="98.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="284.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">宠信 · 设西厂</text></g>
+<g class="elab" data-a="朱祐樘" data-b="弘治三贤" data-t="trust"><rect x="550.1" y="158.0" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="604.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚重 · 弘治中兴</text></g>
+<g class="elab" data-a="朱厚照" data-b="刘瑾" data-t="trust"><rect x="870.1" y="158.0" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="924.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">宠信 · 八虎之首</text></g>
+<g class="elab" data-a="刘瑾" data-b="王守仁" data-t="fight"><rect x="942.0" y="350.8" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="1006.8" y="364.8" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">廷杖贬谪 · 龙场悟道</text></g>
+<g class="elab" data-a="朱厚照" data-b="王守仁" data-t="trust"><rect x="949.7" y="252.3" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="993.5" y="266.3" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">用其平宁王之乱</text></g>
+</g>
+<g class="nodes">
+<g class="node" data-n="朱见深" data-g="emp"><rect x="234" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="300" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱见深</text><text class="nr" x="300" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明宪宗 · 成化</text></g>
+<g class="node" data-n="朱祐樘" data-g="emp"><rect x="554" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="620" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱祐樘</text><text class="nr" x="620" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明孝宗 · 弘治</text></g>
+<g class="node" data-n="朱厚照" data-g="emp"><rect x="874" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="940" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱厚照</text><text class="nr" x="940" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明武宗 · 正德</text></g>
+<g class="node" data-n="汪直" data-g="eunuch"><rect x="234" y="239" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="300" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">汪直</text><text class="nr" x="300" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">西厂提督太监</text></g>
+<g class="node" data-n="万贵妃" data-g="cons"><rect x="414" y="239" width="132" height="52" rx="10" fill="#FDF0E3" stroke="#E8C9A0" stroke-width="2"/><text class="nn" x="480" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">万贵妃</text><text class="nr" x="480" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">皇贵妃 · 专宠</text></g>
+<g class="node" data-n="弘治三贤" data-g="civil"><rect x="554" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="620" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">弘治三贤</text><text class="nr" x="620" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">刘健·李东阳·谢迁</text></g>
+<g class="node" data-n="刘瑾" data-g="eunuch"><rect x="874" y="239" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="940" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">刘瑾</text><text class="nr" x="940" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">八虎之首 · 立皇帝</text></g>
+<g class="node" data-n="王守仁" data-g="civil"><rect x="1034" y="404" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="1100" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">王守仁</text><text class="nr" x="1100" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">王阳明 · 心学</text></g>
+</g>
+</svg>
+<svg class="gmap" viewBox="0 0 1240 760" data-k="jw">
+<g class="edges">
+<path class="edge" data-a="朱厚熜" data-b="朱载垕" data-t="kin" d="M350 70 Q485 113 620 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱载垕" data-b="朱翊钧" data-t="kin" d="M620 70 Q760 114 900 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱厚熜" data-b="严嵩" data-t="trust" d="M350 70 Q318 167 350 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱厚熜" data-b="海瑞" data-t="fight" d="M350 70 Q199 221 150 430" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="严嵩" data-b="海瑞" data-t="fight" d="M350 265 Q223 315 150 430" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱厚熜" data-b="戚继光" data-t="trust" d="M350 70 Q438 284 620 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱厚熜" data-b="俞大猷" data-t="trust" d="M350 70 Q538 295 800 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱翊钧" data-b="张居正" data-t="trust" d="M900 70 Q868 167 900 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="张居正" data-b="朱翊钧" data-t="kill" d="M900 265 Q931 167 900 70" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="张居正" data-b="戚继光" data-t="trust" d="M900 265 Q733 302 620 430" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+</g>
+<g class="elabs">
+<g class="elab" data-a="朱厚熜" data-b="朱载垕" data-t="kin"><rect x="467.5" y="82.1" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="485.0" y="96.1" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱载垕" data-b="朱翊钧" data-t="kin"><rect x="742.5" y="82.9" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="760.0" y="96.9" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱厚熜" data-b="严嵩" data-t="trust"><rect x="274.9" y="158.0" width="119.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="334.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">宠信 · 专权二十年</text></g>
+<g class="elab" data-a="朱厚熜" data-b="海瑞" data-t="fight"><rect x="159.9" y="226.4" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="224.6" y="240.4" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">抬棺上疏 · 痛骂皇帝</text></g>
+<g class="elab" data-a="严嵩" data-b="海瑞" data-t="fight"><rect x="208.8" y="322.0" width="56.0" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="236.8" y="336.0" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">弹劾严党</text></g>
+<g class="elab" data-a="朱厚熜" data-b="戚继光" data-t="trust"><rect x="423.3" y="257.9" width="77.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="461.8" y="271.9" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚为抗倭名将</text></g>
+<g class="elab" data-a="朱厚熜" data-b="俞大猷" data-t="trust"><rect x="518.4" y="263.1" width="77.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="556.9" y="277.1" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">倚为抗倭名将</text></g>
+<g class="elab" data-a="朱翊钧" data-b="张居正" data-t="trust"><rect x="830.1" y="158.0" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="884.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">任用 · 十年改革</text></g>
+<g class="elab" data-a="张居正" data-b="朱翊钧" data-t="kill"><rect x="840.4" y="158.0" width="150.5" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="915.6" y="172.0" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">死后抄家清算 · 人亡政息</text></g>
+<g class="elab" data-a="张居正" data-b="戚继光" data-t="trust"><rect x="703.0" y="315.6" width="87.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="746.8" y="329.6" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">支持其镇守蓟州</text></g>
+</g>
+<g class="nodes">
+<g class="node" data-n="朱厚熜" data-g="emp"><rect x="284" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="350" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱厚熜</text><text class="nr" x="350" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明世宗 · 嘉靖</text></g>
+<g class="node" data-n="朱载垕" data-g="emp"><rect x="554" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="620" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱载垕</text><text class="nr" x="620" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明穆宗 · 隆庆</text></g>
+<g class="node" data-n="朱翊钧" data-g="emp"><rect x="834" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="900" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱翊钧</text><text class="nr" x="900" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明神宗 · 万历</text></g>
+<g class="node" data-n="严嵩" data-g="civil"><rect x="284" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="350" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">严嵩</text><text class="nr" x="350" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">内阁首辅 · 专权20年</text></g>
+<g class="node" data-n="海瑞" data-g="civil"><rect x="84" y="404" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="150" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">海瑞</text><text class="nr" x="150" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">清官 · 海青天</text></g>
+<g class="node" data-n="戚继光" data-g="general"><rect x="554" y="404" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="620" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">戚继光</text><text class="nr" x="620" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">抗倭名将 · 戚家军</text></g>
+<g class="node" data-n="俞大猷" data-g="general"><rect x="734" y="404" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="800" y="428" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">俞大猷</text><text class="nr" x="800" y="445" font-size="9.5" fill="#8A7A66" text-anchor="middle">抗倭名将 · 俞家军</text></g>
+<g class="node" data-n="张居正" data-g="civil"><rect x="834" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="900" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">张居正</text><text class="nr" x="900" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">改革家 · 一条鞭法</text></g>
+</g>
+</svg>
+<svg class="gmap" viewBox="0 0 1240 760" data-k="cm">
+<g class="edges">
+<path class="edge" data-a="朱常洛" data-b="朱由校" data-t="kin" d="M250 70 Q400 118 550 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱常洛" data-b="朱由检" data-t="kin" d="M250 70 Q550 128 850 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱由校" data-b="朱由检" data-t="kin" d="M550 70 Q700 118 850 70" fill="none" stroke="#D9A441" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱由校" data-b="魏忠贤" data-t="trust" d="M550 70 Q518 167 550 265" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="魏忠贤" data-b="客氏" data-t="ally" d="M550 265 Q440 229 330 265" fill="none" stroke="#2E5A88" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="魏忠贤" data-b="东林党" data-t="fight" d="M550 265 Q675 305 800 265" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱由检" data-b="袁崇焕" data-t="kill" d="M850 70 Q933 204 1080 265" fill="none" stroke="#C0392B" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱由检" data-b="秦良玉" data-t="trust" d="M850 70 Q712 236 680 450" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="朱由检" data-b="王承恩" data-t="trust" d="M850 70 Q792 260 850 450" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+<path class="edge" data-a="李自成" data-b="朱由检" data-t="fight" d="M1100 450 Q1023 228 850 70" fill="none" stroke="#8E44AD" stroke-width="2.4" stroke-dasharray="7 5" stroke-linecap="round"/>
+<path class="edge" data-a="朱由检" data-b="史可法" data-t="trust" d="M850 70 Q610 217 450 450" fill="none" stroke="#8A6A4A" stroke-width="2.4" stroke-linecap="round"/>
+</g>
+<g class="elabs">
+<g class="elab" data-a="朱常洛" data-b="朱由校" data-t="kin"><rect x="382.5" y="84.5" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="400.0" y="98.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱常洛" data-b="朱由检" data-t="kin"><rect x="532.5" y="89.5" width="35.0" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="550.0" y="103.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">父子</text></g>
+<g class="elab" data-a="朱由校" data-b="朱由检" data-t="kin"><rect x="645.8" y="84.5" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#D9A441" stroke-width="1.2" opacity="0.97"/><text x="700.0" y="98.5" font-size="10.5" fill="#D9A441" text-anchor="middle" font-weight="600">兄弟 · 兄终弟及</text></g>
+<g class="elab" data-a="朱由校" data-b="魏忠贤" data-t="trust"><rect x="480.1" y="158.0" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="534.4" y="172.0" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">宠信 · 阉党专权</text></g>
+<g class="elab" data-a="魏忠贤" data-b="客氏" data-t="ally"><rect x="385.8" y="237.9" width="108.5" height="19" rx="9" fill="#FFFDF6" stroke="#2E5A88" stroke-width="1.2" opacity="0.97"/><text x="440.0" y="251.9" font-size="10.5" fill="#2E5A88" text-anchor="middle" font-weight="600">勾结 · 掌控后宫</text></g>
+<g class="elab" data-a="魏忠贤" data-b="东林党" data-t="fight"><rect x="641.8" y="275.5" width="66.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="675.0" y="289.5" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">迫害六君子</text></g>
+<g class="elab" data-a="朱由检" data-b="袁崇焕" data-t="kill"><rect x="884.6" y="176.4" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#C0392B" stroke-width="1.2" opacity="0.97"/><text x="949.4" y="190.4" font-size="10.5" fill="#C0392B" text-anchor="middle" font-weight="600">先倚重 · 后凌迟处死</text></g>
+<g class="elab" data-a="朱由检" data-b="秦良玉" data-t="trust"><rect x="673.8" y="238.7" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="738.5" y="252.7" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">万里勤王 · 赋诗旌表</text></g>
+<g class="elab" data-a="朱由检" data-b="王承恩" data-t="trust"><rect x="751.0" y="250.5" width="140.0" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="821.0" y="264.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">唯一随死者 · 煤山殉主</text></g>
+<g class="elab" data-a="李自成" data-b="朱由检" data-t="fight"><rect x="924.0" y="234.6" width="150.5" height="19" rx="9" fill="#FFFDF6" stroke="#8E44AD" stroke-width="1.2" opacity="0.97"/><text x="999.2" y="248.6" font-size="10.5" fill="#8E44AD" text-anchor="middle" font-weight="600">1644攻破北京 · 明亡</text></g>
+<g class="elab" data-a="朱由检" data-b="史可法" data-t="trust"><rect x="565.3" y="229.5" width="129.5" height="19" rx="9" fill="#FFFDF6" stroke="#8A6A4A" stroke-width="1.2" opacity="0.97"/><text x="630.0" y="243.5" font-size="10.5" fill="#8A6A4A" text-anchor="middle" font-weight="600">殉国旧臣 · 死守扬州</text></g>
+</g>
+<g class="nodes">
+<g class="node" data-n="朱常洛" data-g="emp"><rect x="184" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="250" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱常洛</text><text class="nr" x="250" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明光宗 · 泰昌</text></g>
+<g class="node" data-n="朱由校" data-g="emp"><rect x="484" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="550" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱由校</text><text class="nr" x="550" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明熹宗 · 天启</text></g>
+<g class="node" data-n="朱由检" data-g="emp"><rect x="784" y="44" width="132" height="52" rx="10" fill="#FFF6E6" stroke="#E0C9A6" stroke-width="2"/><text class="nn" x="850" y="68" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">朱由检</text><text class="nr" x="850" y="85" font-size="9.5" fill="#8A7A66" text-anchor="middle">明思宗 · 崇祯</text></g>
+<g class="node" data-n="魏忠贤" data-g="eunuch"><rect x="484" y="239" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="550" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">魏忠贤</text><text class="nr" x="550" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">九千岁 · 阉党</text></g>
+<g class="node" data-n="客氏" data-g="cons"><rect x="264" y="239" width="132" height="52" rx="10" fill="#FDF0E3" stroke="#E8C9A0" stroke-width="2"/><text class="nn" x="330" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">客氏</text><text class="nr" x="330" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">奉圣夫人 · 乳母</text></g>
+<g class="node" data-n="东林党" data-g="civil"><rect x="734" y="239" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="800" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">东林党</text><text class="nr" x="800" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">杨涟·左光斗等</text></g>
+<g class="node" data-n="袁崇焕" data-g="general"><rect x="1014" y="239" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="1080" y="263" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">袁崇焕</text><text class="nr" x="1080" y="280" font-size="9.5" fill="#8A7A66" text-anchor="middle">蓟辽督师</text></g>
+<g class="node" data-n="秦良玉" data-g="general"><rect x="614" y="424" width="132" height="52" rx="10" fill="#EAF3EA" stroke="#8FBF8F" stroke-width="2"/><text class="nn" x="680" y="448" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">秦良玉</text><text class="nr" x="680" y="465" font-size="9.5" fill="#8A7A66" text-anchor="middle">女将 · 白杆兵</text></g>
+<g class="node" data-n="王承恩" data-g="eunuch"><rect x="784" y="424" width="132" height="52" rx="10" fill="#F2ECF8" stroke="#AE93CE" stroke-width="2"/><text class="nn" x="850" y="448" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">王承恩</text><text class="nr" x="850" y="465" font-size="9.5" fill="#8A7A66" text-anchor="middle">司礼监秉笔</text></g>
+<g class="node" data-n="史可法" data-g="civil"><rect x="384" y="424" width="132" height="52" rx="10" fill="#FBEEEA" stroke="#E0A79D" stroke-width="2"/><text class="nn" x="450" y="448" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">史可法</text><text class="nr" x="450" y="465" font-size="9.5" fill="#8A7A66" text-anchor="middle">南明 · 督师扬州</text></g>
+<g class="node" data-n="李自成" data-g="enemy"><rect x="1034" y="424" width="132" height="52" rx="10" fill="#F5EDE6" stroke="#BFA08A" stroke-width="2"/><text class="nn" x="1100" y="448" font-size="13" font-weight="800" fill="#2F3640" text-anchor="middle">李自成</text><text class="nr" x="1100" y="465" font-size="9.5" fill="#8A7A66" text-anchor="middle">大顺军 · 闯王</text></g>
+</g>
+</svg>
+</div>
+<div class="panel" id="panel"><h4>👆 点图上的任意一个人</h4><p style="font-size:14.5px">这里会显示他是谁、属于哪个集团、以及他全部的关系清单。</p></div>
+<div id="gnote" class="tip"></div>
+</section>
+<section>
+<div class="h2"><span class="n">3</span>横向时间轴：17个年号</div>
+<div class="h2sub">左右滑动；点任意年号，自动跳到它所在的关系图</div>
+<div class="tlwrap"><div class="tl" id="tl">
+<div class="ti" data-k="hw"><div class="e1">洪武</div><div class="e2">朱元璋</div><div class="e3">1368—1398</div></div>
+<div class="ti" data-k="jy"><div class="e1">建文</div><div class="e2">朱允炆</div><div class="e3">1399—1402</div></div>
+<div class="ti" data-k="jy"><div class="e1">永乐</div><div class="e2">朱棣</div><div class="e3">1403—1424</div></div>
+<div class="ti" data-k="zt"><div class="e1">洪熙</div><div class="e2">朱高炽</div><div class="e3">1425</div></div>
+<div class="ti" data-k="zt"><div class="e1">宣德</div><div class="e2">朱瞻基</div><div class="e3">1426—1435</div></div>
+<div class="ti" data-k="zt"><div class="e1">正统</div><div class="e2">朱祁镇</div><div class="e3">1436—1449</div></div>
+<div class="ti" data-k="zt"><div class="e1">景泰</div><div class="e2">朱祁钰</div><div class="e3">1450—1457</div></div>
+<div class="ti" data-k="zt"><div class="e1">天顺</div><div class="e2">朱祁镇</div><div class="e3">1457—1464</div></div>
+<div class="ti" data-k="cz"><div class="e1">成化</div><div class="e2">朱见深</div><div class="e3">1465—1487</div></div>
+<div class="ti" data-k="cz"><div class="e1">弘治</div><div class="e2">朱祐樘</div><div class="e3">1488—1505</div></div>
+<div class="ti" data-k="cz"><div class="e1">正德</div><div class="e2">朱厚照</div><div class="e3">1506—1521</div></div>
+<div class="ti" data-k="jw"><div class="e1">嘉靖</div><div class="e2">朱厚熜</div><div class="e3">1522—1566</div></div>
+<div class="ti" data-k="jw"><div class="e1">隆庆</div><div class="e2">朱载垕</div><div class="e3">1567—1572</div></div>
+<div class="ti" data-k="jw"><div class="e1">万历</div><div class="e2">朱翊钧</div><div class="e3">1573—1620</div></div>
+<div class="ti" data-k="cm"><div class="e1">泰昌</div><div class="e2">朱常洛</div><div class="e3">1620</div></div>
+<div class="ti" data-k="cm"><div class="e1">天启</div><div class="e2">朱由校</div><div class="e3">1621—1627</div></div>
+<div class="ti" data-k="cm"><div class="e1">崇祯</div><div class="e2">朱由检</div><div class="e3">1628—1644</div></div>
+</div><div class="tlhint">← 左右滑动 →</div></div>
+</section>
+</div>
+<script>
+var N={"hw": {"朱元璋": {"r": "明太祖 · 开国皇帝", "g": "emp"}, "马皇后": {"r": "孝慈高皇后", "g": "cons"}, "朱标": {"r": "太子 · 早逝", "g": "emp"}, "朱棣": {"r": "燕王 · 后来的永乐帝", "g": "emp"}, "朱允炆": {"r": "皇太孙 · 建文帝", "g": "emp"}, "其他塞王": {"r": "秦·晋·肃·宁等九王", "g": "emp"}, "李善长": {"r": "淮西领袖 · 韩国公", "g": "huaixi"}, "胡惟庸": {"r": "末代丞相", "g": "huaixi"}, "汤和": {"r": "东瓯王 · 善终", "g": "huaixi"}, "徐达": {"r": "中山王 · 开国第一将", "g": "huaixi"}, "常遇春": {"r": "开平王 · 常十万", "g": "huaixi"}, "蓝玉": {"r": "凉国公 · 名将", "g": "huaixi"}, "李文忠": {"r": "岐阳王 · 朱元璋外甥", "g": "huaixi"}, "刘基": {"r": "刘伯温 · 诚意伯", "g": "zhedong"}, "宋濂": {"r": "文臣之首 · 太子师", "g": "zhedong"}}, "jy": {"朱允炆": {"r": "建文帝 · 21岁即位", "g": "emp"}, "朱棣": {"r": "燕王 → 明成祖", "g": "emp"}, "齐泰": {"r": "兵部尚书 · 削藩派", "g": "civil"}, "黄子澄": {"r": "翰林学士 · 削藩派", "g": "civil"}, "方孝孺": {"r": "帝师 · 第一忠臣", "g": "civil"}, "铁铉": {"r": "济南守将", "g": "general"}, "李景隆": {"r": "曹国公 · 主帅", "g": "general"}, "姚广孝": {"r": "黑衣宰相 · 谋主", "g": "civil"}, "郑和": {"r": "三宝太监", "g": "eunuch"}, "解缙": {"r": "《永乐大典》主编", "g": "civil"}}, "zt": {"朱高炽": {"r": "明仁宗 · 洪熙", "g": "emp"}, "朱瞻基": {"r": "明宣宗 · 宣德", "g": "emp"}, "朱祁镇": {"r": "明英宗 · 正统/天顺", "g": "emp"}, "朱祁钰": {"r": "景泰帝 · 代宗", "g": "emp"}, "三杨": {"r": "杨士奇·杨荣·杨溥", "g": "civil"}, "王振": {"r": "司礼监太监", "g": "eunuch"}, "也先": {"r": "瓦剌首领", "g": "enemy"}, "于谦": {"r": "兵部尚书 · 于少保", "g": "civil"}, "石亨": {"r": "武将 · 夺门牵头", "g": "general"}, "徐有贞": {"r": "文臣 · 夺门主谋", "g": "civil"}, "曹吉祥": {"r": "太监 · 夺门同谋", "g": "eunuch"}}, "cz": {"朱见深": {"r": "明宪宗 · 成化", "g": "emp"}, "朱祐樘": {"r": "明孝宗 · 弘治", "g": "emp"}, "朱厚照": {"r": "明武宗 · 正德", "g": "emp"}, "汪直": {"r": "西厂提督太监", "g": "eunuch"}, "万贵妃": {"r": "皇贵妃 · 专宠", "g": "cons"}, "弘治三贤": {"r": "刘健·李东阳·谢迁", "g": "civil"}, "刘瑾": {"r": "八虎之首 · 立皇帝", "g": "eunuch"}, "王守仁": {"r": "王阳明 · 心学", "g": "civil"}}, "jw": {"朱厚熜": {"r": "明世宗 · 嘉靖", "g": "emp"}, "朱载垕": {"r": "明穆宗 · 隆庆", "g": "emp"}, "朱翊钧": {"r": "明神宗 · 万历", "g": "emp"}, "严嵩": {"r": "内阁首辅 · 专权20年", "g": "civil"}, "海瑞": {"r": "清官 · 海青天", "g": "civil"}, "戚继光": {"r": "抗倭名将 · 戚家军", "g": "general"}, "俞大猷": {"r": "抗倭名将 · 俞家军", "g": "general"}, "张居正": {"r": "改革家 · 一条鞭法", "g": "civil"}}, "cm": {"朱常洛": {"r": "明光宗 · 泰昌", "g": "emp"}, "朱由校": {"r": "明熹宗 · 天启", "g": "emp"}, "朱由检": {"r": "明思宗 · 崇祯", "g": "emp"}, "魏忠贤": {"r": "九千岁 · 阉党", "g": "eunuch"}, "客氏": {"r": "奉圣夫人 · 乳母", "g": "cons"}, "东林党": {"r": "杨涟·左光斗等", "g": "civil"}, "袁崇焕": {"r": "蓟辽督师", "g": "general"}, "秦良玉": {"r": "女将 · 白杆兵", "g": "general"}, "王承恩": {"r": "司礼监秉笔", "g": "eunuch"}, "史可法": {"r": "南明 · 督师扬州", "g": "civil"}, "李自成": {"r": "大顺军 · 闯王", "g": "enemy"}}}, E={"hw": [["朱元璋", "马皇后", "marry", "夫妻 · 结发"], ["朱元璋", "朱标", "kin", "父子 · 太子"], ["朱元璋", "朱棣", "kin", "父子 · 四子"], ["朱标", "朱允炆", "kin", "父子"], ["朱元璋", "其他塞王", "kin", "父子 · 分封守边"], ["朱元璋", "李善长", "kill", "1390年处死 · 株连全家"], ["朱元璋", "胡惟庸", "kill", "1380年处死 · 废丞相"], ["朱元璋", "蓝玉", "kill", "1393年处死 · 株连1.5万"], ["朱元璋", "徐达", "trust", "重用 · 北伐主帅"], ["朱元璋", "常遇春", "trust", "重用 · 早逝"], ["朱元璋", "汤和", "trust", "重用 · 少数善终"], ["朱元璋", "李文忠", "trust", "重用 · 外甥"], ["朱元璋", "刘基", "trust", "用而疑之 · 被迫辞官"], ["朱元璋", "宋濂", "trust", "重用 · 后获罪"], ["李善长", "胡惟庸", "ally", "同乡 · 举荐 · 姻亲"], ["李善长", "刘基", "fight", "两派党争 · 势同水火"], ["徐达", "朱棣", "marry", "翁婿 · 徐达长女嫁朱棣"], ["常遇春", "蓝玉", "ally", "姻亲 · 蓝玉是常遇春妻弟"], ["马皇后", "宋濂", "help", "劝谏救下 · 免死改流放"], ["马皇后", "李文忠", "help", "劝止 · 后立大功"], ["朱标", "宋濂", "help", "师生 · 太子师"]], "jy": [["朱允炆", "朱棣", "fight", "叔侄对决 · 靖难之役"], ["朱允炆", "齐泰", "trust", "倚为谋士 · 主先削强藩"], ["朱允炆", "黄子澄", "trust", "倚为谋士 · 主先削弱藩"], ["朱允炆", "方孝孺", "trust", "帝师 · 深信"], ["朱允炆", "铁铉", "trust", "守济南 · 挡住朱棣"], ["朱允炆", "李景隆", "trust", "任命为主帅 · 50万大军"], ["朱棣", "姚广孝", "trust", "谋主 · 力劝起兵"], ["朱棣", "郑和", "trust", "派七下西洋"], ["朱棣", "解缙", "trust", "命修《永乐大典》"], ["朱棣", "方孝孺", "kill", "拒写诏书 · 被杀牵连广"], ["朱棣", "铁铉", "kill", "不屈 · 被杀"], ["李景隆", "朱棣", "ally", "打开南京城门迎降"], ["朱棣", "朱允炆", "kill", "城破 · 建文帝下落不明"]], "zt": [["朱高炽", "朱瞻基", "kin", "父子"], ["朱瞻基", "朱祁镇", "kin", "父子"], ["朱祁镇", "朱祁钰", "kin", "兄弟 · 同父异母"], ["朱高炽", "三杨", "trust", "倚为宰辅"], ["朱瞻基", "三杨", "trust", "倚为宰辅 · 仁宣之治"], ["朱祁镇", "王振", "trust", "宠信 · 太子伴读"], ["也先", "朱祁镇", "fight", "1449土木堡 · 皇帝被俘"], ["朱祁钰", "于谦", "trust", "倚重 · 打赢北京保卫战"], ["于谦", "也先", "fight", "北京保卫战 · 五日击退"], ["石亨", "于谦", "fight", "反咬 · 诬陷谋逆"], ["徐有贞", "于谦", "fight", "反咬 · 说不杀无名"], ["曹吉祥", "于谦", "fight", "反咬 · 夺门同谋"], ["朱祁镇", "于谦", "kill", "1457年处死 · 天下冤之"], ["石亨", "朱祁镇", "ally", "夺门之变 · 拥其复辟"], ["朱祁钰", "朱祁镇", "fight", "软禁南宫七年"]], "cz": [["朱见深", "朱祐樘", "kin", "父子"], ["朱祐樘", "朱厚照", "kin", "父子"], ["朱见深", "万贵妃", "marry", "专宠 · 相差十九岁"], ["朱见深", "汪直", "trust", "宠信 · 设西厂"], ["朱祐樘", "弘治三贤", "trust", "倚重 · 弘治中兴"], ["朱厚照", "刘瑾", "trust", "宠信 · 八虎之首"], ["刘瑾", "王守仁", "fight", "廷杖贬谪 · 龙场悟道"], ["朱厚照", "王守仁", "trust", "用其平宁王之乱"]], "jw": [["朱厚熜", "朱载垕", "kin", "父子"], ["朱载垕", "朱翊钧", "kin", "父子"], ["朱厚熜", "严嵩", "trust", "宠信 · 专权二十年"], ["朱厚熜", "海瑞", "fight", "抬棺上疏 · 痛骂皇帝"], ["严嵩", "海瑞", "fight", "弹劾严党"], ["朱厚熜", "戚继光", "trust", "倚为抗倭名将"], ["朱厚熜", "俞大猷", "trust", "倚为抗倭名将"], ["朱翊钧", "张居正", "trust", "任用 · 十年改革"], ["张居正", "朱翊钧", "kill", "死后抄家清算 · 人亡政息"], ["张居正", "戚继光", "trust", "支持其镇守蓟州"]], "cm": [["朱常洛", "朱由校", "kin", "父子"], ["朱常洛", "朱由检", "kin", "父子"], ["朱由校", "朱由检", "kin", "兄弟 · 兄终弟及"], ["朱由校", "魏忠贤", "trust", "宠信 · 阉党专权"], ["魏忠贤", "客氏", "ally", "勾结 · 掌控后宫"], ["魏忠贤", "东林党", "fight", "迫害六君子"], ["朱由检", "袁崇焕", "kill", "先倚重 · 后凌迟处死"], ["朱由检", "秦良玉", "trust", "万里勤王 · 赋诗旌表"], ["朱由检", "王承恩", "trust", "唯一随死者 · 煤山殉主"], ["李自成", "朱由检", "fight", "1644攻破北京 · 明亡"], ["朱由检", "史可法", "trust", "殉国旧臣 · 死守扬州"]]}, G={"emp": "皇帝·宗室", "cons": "后族·外戚", "huaixi": "淮西勋贵", "zhedong": "浙东文臣", "eunuch": "宦官集团", "civil": "文官·名臣", "general": "武将·边防", "enemy": "外敌·起义军"}, R={"kin": {"n": "血缘（父子·祖孙）", "c": "#D9A441"}, "marry": {"n": "婚姻（夫妻·翁婿）", "c": "#C0392B"}, "trust": {"n": "君臣·重用", "c": "#8A6A4A"}, "kill": {"n": "清洗（杀·贬·清算）", "c": "#C0392B"}, "fight": {"n": "敌对（党争·交战）", "c": "#8E44AD"}, "ally": {"n": "同盟·姻亲·举荐", "c": "#2E5A88"}, "help": {"n": "救助·师友", "c": "#3E8E5A"}}, NOTE={"hw": "中心是朱元璋。注意看：他把淮西老兄弟（左）和浙东读书人（右）摆在对立面互相牵制，自己居中；可最后红色的清洗线，几乎连到了每一个人。", "jy": "左右对峙最清楚：左边是侄子朱允炆和他的文臣，右边是叔叔朱棣和他的班底。中间那条紫色虚线，就是打了四年的靖难之役。", "zt": "上半部分是四代皇帝，下半部分是那场悲剧。看于谦那几条紫色线——救国的人，被他救下的人联合起来杀了。", "cz": "三个皇帝三种活法：一个宠太监、一个勤政中兴、一个贪玩。注意刘瑾和王守仁那条紫线——正是这次贬谪，逼出了后来的阳明心学。", "jw": "海瑞那条紫线很关键——他抬着棺材骂皇帝。而张居正一绿一红两条线，是明朝最后一次自救与它的落空。", "cm": "终点那张图最扎眼：绿色线只剩两条——一条连着四川的女将军，一条连着陪他上吊的太监。百官那条线，是空的。"};
+
+var stage=document.getElementById('stage');
+var svgs=[].slice.call(document.querySelectorAll('.gmap'));
+var panel=document.getElementById('panel');
+var gnote=document.getElementById('gnote');
+var curK=svgs[0].getAttribute('data-k');
+var offTypes={};   // 被隐藏的关系类型
+var showAll=false;
+var focusNode=null;
+
+function curSvg(){
+  return svgs.filter(function(s){return s.getAttribute('data-k')===curK})[0];
+}
+function showGraph(k,scrollTop){
+  curK=k; focusNode=null;
+  svgs.forEach(function(s){
+    var on=s.getAttribute('data-k')===k;
+    s.classList.toggle('hide',!on);
+    s.classList.remove('focusing','showall');
+    clearMarks(s);
+  });
+  [].slice.call(document.querySelectorAll('.tab')).forEach(function(t){
+    t.classList.toggle('on', t.getAttribute('data-k')===k);
+  });
+  [].slice.call(document.querySelectorAll('.ti')).forEach(function(t){
+    t.classList.toggle('on', t.getAttribute('data-k')===k);
+  });
+  showAll=false;
+  document.getElementById('btnLab').classList.remove('on');
+  document.getElementById('btnLab').textContent='显示全部文字';
+  gnote.innerHTML='<b>'+document.querySelector('.tab[data-k="'+k+'"]').textContent+'</b>　'+NOTE[k];
+  panel.innerHTML='<h4>👆 点图上的任意一个人</h4><p style="font-size:14.5px">这里会显示他是谁、属于哪个集团、以及他全部的关系清单。</p>';
+  applyFilter();
+  applyZoom();
+  if(scrollTop) stage.scrollTop=0;
+}
+
+function clearMarks(s){
+  s.querySelectorAll('.node').forEach(function(n){n.classList.remove('on','rel')});
+  s.querySelectorAll('.edge').forEach(function(e){e.classList.remove('on')});
+  s.querySelectorAll('.elab').forEach(function(e){e.classList.remove('on')});
+}
+
+/* 点击节点 */
+svgs.forEach(function(s){
+  s.querySelectorAll('.node').forEach(function(nd){
+    nd.addEventListener('click',function(ev){
+      ev.stopPropagation();
+      var nm=nd.getAttribute('data-n');
+      focusNode=nm;
+      var svg=s;
+      svg.classList.add('focusing');
+      clearMarks(svg);
+      nd.classList.add('on');
+      var rels=[];
+      svg.querySelectorAll('.edge').forEach(function(e){
+        var a=e.getAttribute('data-a'),b=e.getAttribute('data-b');
+        if(a===nm||b===nm){
+          e.classList.add('on');
+          var other=(a===nm)?b:a;
+          rels.push([other,e.getAttribute('data-t')]);
+          var o=svg.querySelector('.node[data-n="'+other+'"]');
+          if(o)o.classList.add('rel');
+        }
+      });
+      svg.querySelectorAll('.elab').forEach(function(l){
+        if(l.getAttribute('data-a')===nm||l.getAttribute('data-b')===nm)l.classList.add('on');
+      });
+      renderPanel(nm,rels);
+    });
+  });
+  // 点空白取消
+  s.addEventListener('click',function(e){
+    if(e.target.closest('.node'))return;
+    s.classList.remove('focusing');
+    clearMarks(s); focusNode=null;
+    panel.innerHTML='<h4>👆 点图上的任意一个人</h4><p style="font-size:14.5px">这里会显示他是谁、属于哪个集团、以及他全部的关系清单。</p>';
+  });
+});
+
+function relLabel(a,b,t){
+  var list=E[curK];
+  for(var i=0;i<list.length;i++){
+    var e=list[i];
+    if((e[0]===a&&e[1]===b&&e[2]===t)||(e[0]===b&&e[1]===a&&e[2]===t))return e[3];
+  }
+  return '';
+}
+
+function renderPanel(nm,rels){
+  var info=N[curK][nm];
+  var h='<h4>'+nm+'</h4><div class="role">'+G[info.g]+' · '+info.r+'</div>';
+  h+='<div class="desc">点下面任意一条，单独高亮这条关系。</div><div class="rlist">';
+  var list=E[curK];
+  list.forEach(function(e){
+    var a=e[0],b=e[1],t=e[2],lab=e[3];
+    var other=null,dir='';
+    if(a===nm){other=b;dir='→';}
+    else if(b===nm){other=a;dir='←';}
+    else return;
+    h+='<div class="ritem" data-a="'+a+'" data-b="'+b+'" data-t="'+t+'">'
+      +'<span class="tag2" style="background:'+R[t].c+'">'+R[t].n.split('（')[0]+'</span>'
+      +'<span><span class="who">'+dir+' '+other+'</span>　<span class="wht">'+lab+'</span></span></div>';
+  });
+  h+='</div>';
+  panel.innerHTML=h;
+  panel.querySelectorAll('.ritem').forEach(function(it){
+    it.addEventListener('click',function(){
+      var svg=curSvg();
+      svg.classList.add('focusing');
+      clearMarks(svg);
+      var a=it.getAttribute('data-a'),b=it.getAttribute('data-b'),t=it.getAttribute('data-t');
+      svg.querySelectorAll('.edge').forEach(function(e){
+        if(e.getAttribute('data-a')===a&&e.getAttribute('data-b')===b&&e.getAttribute('data-t')===t)e.classList.add('on');
+      });
+      svg.querySelectorAll('.elab').forEach(function(l){
+        if(l.getAttribute('data-a')===a&&l.getAttribute('data-b')===b&&l.getAttribute('data-t')===t)l.classList.add('on');
+      });
+      [a,b].forEach(function(n){
+        var o=svg.querySelector('.node[data-n="'+n+'"]');
+        if(o)o.classList.add('on');
+      });
+    });
+  });
+}
+
+/* 关系筛选 */
+document.querySelectorAll('.lg').forEach(function(l){
+  l.addEventListener('click',function(){
+    var t=l.getAttribute('data-t');
+    offTypes[t]=!offTypes[t];
+    l.classList.toggle('off',!!offTypes[t]);
+    applyFilter();
+  });
+});
+function applyFilter(){
+  svgs.forEach(function(s){
+    s.querySelectorAll('.edge').forEach(function(e){
+      e.classList.toggle('off',!!offTypes[e.getAttribute('data-t')]);
+    });
+    s.querySelectorAll('.elab').forEach(function(e){
+      e.classList.toggle('off',!!offTypes[e.getAttribute('data-t')]);
+    });
+  });
+}
+
+/* 标签开关 */
+document.getElementById('btnLab').addEventListener('click',function(){
+  showAll=!showAll;
+  curSvg().classList.toggle('showall',showAll);
+  this.classList.toggle('on',showAll);
+  this.textContent=showAll?'隐藏全部文字':'显示全部文字';
+});
+
+/* 缩放 */
+var curZoom=100;
+function applyZoom(){
+  var base=stage.clientWidth-24;
+  svgs.forEach(function(s){
+    if(s.getAttribute('data-k')!==curK)return;
+    if(curZoom===100){s.style.width='100%';}
+    else{s.style.width=(base*curZoom/100)+'px';}
+    s.style.height='auto';
+  });
+}
+document.querySelectorAll('.zb[data-z]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.zb[data-z]').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    curZoom=parseInt(b.getAttribute('data-z'));
+    applyZoom();
+  });
+});
+document.getElementById('btnReset').addEventListener('click',function(){
+  offTypes={};
+  document.querySelectorAll('.lg').forEach(function(x){x.classList.remove('off')});
+  applyFilter();
+  curZoom=100;
+  document.querySelectorAll('.zb[data-z]').forEach(function(x){x.classList.remove('on')});
+  document.querySelector('.zb[data-z="100"]').classList.add('on');
+  applyZoom();
+  stage.scrollLeft=0;stage.scrollTop=0;
+  showGraph(curK,true);
+});
+
+/* 拖动平移（鼠标） */
+var dragging=false,sx=0,sy=0,sl=0,st=0;
+stage.addEventListener('pointerdown',function(e){
+  if(e.pointerType!=='mouse')return;
+  dragging=true;sx=e.clientX;sy=e.clientY;sl=stage.scrollLeft;st=stage.scrollTop;
+  stage.classList.add('drag');
+});
+window.addEventListener('pointermove',function(e){
+  if(!dragging)return;
+  stage.scrollLeft=sl-(e.clientX-sx);
+  stage.scrollTop=st-(e.clientY-sy);
+});
+window.addEventListener('pointerup',function(){dragging=false;stage.classList.remove('drag')});
+
+/* tab */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){showGraph(t.getAttribute('data-k'),true)});
+});
+/* 时间轴 */
+document.querySelectorAll('.ti').forEach(function(t){
+  t.addEventListener('click',function(){showGraph(t.getAttribute('data-k'),false)});
+});
+
+window.addEventListener('resize',function(){applyZoom()});
+showGraph(svgs[0].getAttribute('data-k'),false);
+</script>
+
+<footer>看懂这 6 张图，明朝的人事关系就基本清楚了。</footer>
+</body>
+</html>

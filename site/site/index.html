@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大明人物关系图 · 在线版</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+background:#FFF8EE;color:#2F3640;line-height:1.75;min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(160deg,#6E1F16 0%,#C0392B 55%,#8E2B21 100%);
+color:#FFF6E5;padding:44px 20px 36px;text-align:center;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:0;
+background:radial-gradient(circle at 50% 120%,rgba(255,220,150,.28),transparent 60%)}
+.hd-in{position:relative;z-index:2}
+.tag{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,235,190,.5);
+padding:3px 14px;border-radius:20px;font-size:13px;margin-bottom:14px}
+h1{font-size:30px;font-weight:800;letter-spacing:2px}
+h1 em{font-style:normal;color:#D9A441;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.sub{margin-top:12px;font-size:15px;opacity:.93}
+main{flex:1;max-width:860px;width:100%;margin:0 auto;padding:36px 18px 50px}
+.cards{display:grid;gap:18px}
+@media(min-width:640px){.cards{grid-template-columns:1fr 1fr}}
+a.card{display:block;background:#fff;border:1px solid #E5DACB;border-radius:16px;padding:24px 22px;
+text-decoration:none;color:inherit;box-shadow:0 3px 12px rgba(120,90,60,.08);transition:.18s}
+a.card:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(120,90,60,.16);border-color:#D9A441}
+.card .ic{width:46px;height:46px;border-radius:12px;background:#C0392B;color:#fff;
+display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+.card h2{font-size:19px;font-weight:800;margin-bottom:6px}
+.card h2 span{color:#C0392B}
+.card p{font-size:14px;color:#7A6A58}
+.card .go{margin-top:14px;font-size:13.5px;font-weight:700;color:#C0392B}
+footer{text-align:center;font-size:12.5px;color:#A09381;padding:18px 0 26px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd-in">
+    <span class="tag">1368 – 1644 · 初中生图解版</span>
+    <h1>大明<em>人物关系</em>全图</h1>
+    <div class="sub">从朱元璋开国到崇祯殉国，一图看懂 276 年庙堂江湖</div>
+  </div>
+</header>
+<main>
+  <div class="cards">
+    <a class="card" href="./full-map.html">
+      <div class="ic">全</div>
+      <h2>群臣关系<span>全图</span></h2>
+      <p>完整版长图：年号总表、开国功臣、藩王、太监、名臣名将分时期详解，含人物卡片点选与关系说明。</p>
+      <div class="go">进入阅读 →</div>
+    </a>
+    <a class="card" href="./visual-map.html">
+      <div class="ic">图</div>
+      <h2>人物关系<span>可视化版</span></h2>
+      <p>交互式关系图：按时期切换、点击人物高亮关系、支持缩放拖拽与图例筛选，适合探索式学习。</p>
+      <div class="go">进入探索 →</div>
+    </a>
+  </div>
+</main>
+<footer>大明人物关系图 · 在线版</footer>
+</body>
+</html>
