@@ -27,7 +27,8 @@ export default function AgentRig({ agent, runtime, active, danger, onClick, layo
       const a = (i / n) * Math.PI * 2 - Math.PI / 2;
       return new THREE.Vector3(Math.cos(a) * 5.2, 0, Math.sin(a) * 5.2);
     }
-    return new THREE.Vector3(agent.pos[0], 0, agent.pos[1]);
+    const p = agent.pos ?? [0, 0];
+    return new THREE.Vector3(p[0], 0, p[1]);
   }, [layout, agent.pos, agent.index, agent.total]);
 
   const target = useRef(home.clone());
