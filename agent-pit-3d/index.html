@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Pit 3D · 数字员工监控大厅</title>
+    <style>
+      :root{
+        --bg:#0a0e1a; --bg2:#0f1424; --line:#1e2740; --ink:#e8edf7; --dim:#7d8aa6;
+        --green:#3ddc97; --yellow:#ffd166; --red:#ff5d6c; --blue:#4dabf7; --purple:#a78bfa;
+        --mono:'SF Mono',Consolas,Menlo,monospace;
+      }
+      *{box-sizing:border-box;margin:0;padding:0}
+      html,body,#root{width:100%;height:100%}
+      body{
+        background:radial-gradient(1200px 700px at 50% 10%,#141c33 0%,transparent 60%),var(--bg);
+        color:var(--ink);overflow:hidden;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+      }
+      .hud-top,.hud-side,.hud-log,.hud-help{position:fixed;z-index:10}
+      .hud-top{top:0;left:0;right:0;display:flex;align-items:center;gap:20px;padding:12px 18px;
+        background:linear-gradient(180deg,rgba(10,14,26,.9),rgba(10,14,26,0));pointer-events:none}
+      .hud-top>*{pointer-events:auto}
+      .brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.5px;font-size:14px}
+      .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.6s infinite}
+      @keyframes pulse{50%{opacity:.35}}
+      .brand small{color:var(--dim);font-weight:400;font-size:11.5px}
+      .kpi{font-family:var(--mono);font-size:12px;color:var(--dim);display:flex;align-items:baseline;gap:5px}
+      .kpi b{font-size:15px}
+      .kpi .v-g{color:var(--green)} .kpi .v-y{color:var(--yellow)} .kpi .v-r{color:var(--red)}
+      .spacer{flex:1}
+      .toolbar{display:flex;gap:7px}
+      button{background:var(--bg2);color:var(--ink);border:1px solid var(--line);padding:6px 13px;
+        border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;transition:.15s}
+      button:hover{border-color:var(--blue);color:var(--blue)}
+      button.on{background:var(--blue);border-color:var(--blue);color:#04101e;font-weight:600}
+      .hint{font-size:11px;color:var(--dim);font-family:var(--mono)}
+      canvas{display:block}
+
+      .hud-log{right:16px;bottom:16px;width:340px;max-height:190px;overflow:hidden;
+        background:rgba(10,14,26,.82);border:1px solid var(--line);border-radius:8px;
+        font-family:var(--mono);font-size:10.5px;backdrop-filter:blur(6px)}
+      .hud-log .h{padding:7px 11px;border-bottom:1px solid var(--line);color:var(--dim);
+        display:flex;justify-content:space-between}
+      .hud-log .h span:last-child{cursor:pointer;color:var(--blue)}
+      .hud-log .body{padding:7px 11px;display:flex;flex-direction:column-reverse;gap:4px}
+      .hud-log .line{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .hud-log .line .t{color:var(--blue)} .hud-log .line.g .t{color:var(--green)}
+      .hud-log .line.y .t{color:var(--yellow)} .hud-log .line.r .t{color:var(--red)}
+
+      .hud-side{left:16px;top:64px;width:262px;background:rgba(10,14,26,.86);
+        border:1px solid var(--line);border-radius:10px;padding:14px;backdrop-filter:blur(6px);display:none}
+      .hud-side .dt{font-size:13.5px;font-weight:700}
+      .hud-side .ds{font-size:11px;color:var(--dim);margin:3px 0 12px;font-family:var(--mono)}
+      .hud-side .kv{display:flex;justify-content:space-between;font-size:11.5px;padding:5px 0;border-bottom:1px dashed var(--line)}
+      .hud-side .acts{display:flex;gap:8px;margin-top:12px}
+      .hud-side .acts button{flex:1;font-size:11.5px;padding:6px}
+      .close{position:absolute;right:10px;top:10px;cursor:pointer;color:var(--dim);font-size:14px}
+      .close:hover{color:var(--red)}
+      .crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+        width:22px;height:22px;border:1px solid rgba(77,171,247,.35);border-radius:50%;z-index:9;pointer-events:none}
+      .crosshair::after{content:'';position:absolute;left:50%;top:50%;width:3px;height:3px;
+        background:var(--blue);border-radius:50%;transform:translate(-50%,-50%)}
+      .hud-help{bottom:16px;left:16px;font-size:11px;color:var(--dim);font-family:var(--mono);
+        background:rgba(10,14,26,.6);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+      .hud-help b{color:var(--ink)}
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
