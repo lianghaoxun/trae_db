@@ -181,7 +181,7 @@ export default function AgentRig({ agent, runtime, active, danger, onClick, layo
           {/* 面部屏幕 */}
           <mesh position={[0, 0.02, 0.205]}>
             <planeGeometry args={[0.36, 0.26]} />
-            <FaceMaterial color={col} state={runtime?.state || 'idle'} />
+            <FaceMaterial color={stateColor.current} state={runtime?.state || 'idle'} />
           </mesh>
           {/* 头顶警示灯 */}
           <mesh ref={glow} position={[0, 0.27, 0]}>
